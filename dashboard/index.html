@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RecoverAI | Revenue Operations</title>
+<style>
+  :root { --navy: #102a43; --ink: #243b53; --muted: #627d98; --line: #d9e2ec; --bg: #f5f7fa; --white: #fff; --green: #16855b; --green-bg: #e8f5ef; --amber: #a15c00; --amber-bg: #fff4db; --red: #b42318; --red-bg: #ffebe9; --blue: #1769aa; }
+  * { box-sizing: border-box; }
+  body { margin: 0; color: var(--ink); background: var(--bg); font: 14px/1.45 Georgia, 'Times New Roman', serif; }
+  button, body, input { font-family: Arial, Helvetica, sans-serif; }
+  button { border: 0; cursor: pointer; font-size: 13px; font-weight: 700; }
+  button:disabled { cursor: wait; opacity: .65; }
+  .shell { display: flex; min-height: 100vh; }
+  .sidebar { width: 248px; flex: 0 0 248px; padding: 28px 18px; background: var(--navy); color: #fff; }
+  .brand { padding: 0 14px 30px; border-bottom: 1px solid rgba(255,255,255,.16); }
+  .brand-name { font: 700 23px Georgia, serif; letter-spacing: -.4px; }
+  .brand-subtitle { margin-top: 5px; color: #bcccdc; font-size: 11px; letter-spacing: .05em; text-transform: uppercase; }
+  .nav { margin-top: 30px; }
+  .nav a { display: block; padding: 12px 14px; border-left: 3px solid transparent; color: #d9e2ec; text-decoration: none; }
+  .nav a.active, .nav a:hover { border-left-color: #62b6cb; background: rgba(255,255,255,.09); color: #fff; }
+  .sidebar-note { position: absolute; bottom: 24px; width: 210px; padding: 14px; color: #bcccdc; border-top: 1px solid rgba(255,255,255,.16); font-size: 11px; }
+  .content { width: calc(100% - 248px); max-width: 1500px; padding: 27px 42px 56px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 20px; margin-bottom: 38px; }
+  .eyebrow { color: var(--muted); font: 700 11px Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+  h1 { margin: 7px 0 5px; color: var(--navy); font-size: clamp(26px, 3vw, 38px); letter-spacing: -.7px; }
+  .intro { margin: 0; color: var(--muted); max-width: 610px; }
+  .system-status { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border: 1px solid var(--line); background: var(--white); color: var(--green); font: 700 12px Arial, sans-serif; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #27ae60; box-shadow: 0 0 0 3px var(--green-bg); }
+  .status-dot.offline { background: var(--red); box-shadow: 0 0 0 3px var(--red-bg); }
+  .section { scroll-margin-top: 20px; margin-top: 24px; }
+  .section-heading { display: flex; justify-content: space-between; align-items: end; margin-bottom: 10px; }
+  h2 { margin: 0; color: var(--navy); font: 700 19px Georgia, serif; }
+  .section-kicker { color: var(--muted); font-size: 12px; }
+  .actions { display: flex; gap: 10px; }
+  .primary { padding: 12px 18px; background: var(--blue); color: white; }
+  .secondary { padding: 11px 15px; border: 1px solid var(--line); background: var(--white); color: var(--ink); }
+  .kpis { display: grid; grid-template-columns: repeat(5, minmax(135px, 1fr)); gap: 13px; }
+  .panel, .kpi { border: 1px solid var(--line); background: var(--white); box-shadow: 0 2px 5px rgba(16,42,67,.04); }
+  .kpi { min-height: 124px; padding: 17px; }
+  .kpi-label { color: var(--muted); font: 700 11px Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; }
+  .kpi-value { margin: 13px 0 5px; color: var(--navy); font: 700 24px Georgia, serif; }
+  .kpi-detail { color: var(--muted); font-size: 11px; }
+  .kpi.green .kpi-value { color: var(--green); }
+  .grid-two { display: grid; grid-template-columns: 1.25fr .75fr; gap: 16px; }
+  .panel { padding: 16px; }
+  .chart { height: 190px; display: flex; align-items: end; gap: 10px; padding: 16px 6px 20px; border-bottom: 1px solid var(--line); }
+  .bar-wrap { display: flex; height: 100%; flex: 1; flex-direction: column; justify-content: end; align-items: center; gap: 7px; min-width: 15px; }
+  .bar { width: min(42px, 90%); min-height: 3px; background: var(--blue); }
+  .bar-label { color: var(--muted); font: 10px Arial, sans-serif; white-space: nowrap; }
+  .summary-list { margin: 0; padding: 0; list-style: none; }
+  .summary-list li { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid #edf1f5; }
+  .summary-list li:last-child { border: 0; }
+  .summary-list strong { color: var(--navy); }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; white-space: nowrap; font: 12px Arial, sans-serif; }
+  th, td { height: 48px; padding: 9px 12px; border-bottom: 1px solid #edf1f5; text-align: left; vertical-align: middle; }
+  th { color: var(--muted); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
+  td { color: var(--ink); }
+  td.explanation { max-width: 280px; overflow: hidden; color: var(--muted); text-overflow: ellipsis; white-space: nowrap; }
+  .table-controls { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding-top: 12px; color: var(--muted); font: 11px Arial, sans-serif; }
+  .pagination { display: flex; align-items: center; gap: 4px; }
+  .pagination button { min-width: 30px; height: 28px; padding: 0 8px; border: 1px solid var(--line); background: var(--white); color: var(--ink); font-size: 11px; }
+  .pagination button.active { border-color: var(--blue); background: var(--blue); color: #fff; }
+  .pagination button:disabled { cursor: default; opacity: .45; }
+  .badge { display: inline-block; padding: 4px 8px; font-size: 10px; font-weight: 700; }
+  .recovered { background: var(--green-bg); color: var(--green); } .not_recovered { background: var(--red-bg); color: var(--red); } .not_attempted { background: var(--amber-bg); color: var(--amber); }
+  .belief-table td { padding: 10px 8px; } .belief-table { white-space: normal; }
+  .probability { min-width: 130px; } .progress { height: 6px; margin-top: 6px; background: #e6edf3; } .progress span { display: block; height: 100%; background: var(--green); }
+  .policy { border-left: 4px solid var(--blue); } .policy h3 { margin: 0 0 8px; color: var(--navy); font: 700 16px Georgia, serif; } .policy p { margin: 0; color: var(--muted); }
+  .safety { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; } .rule { padding: 15px; background: #f8fafc; border: 1px solid var(--line); } .rule strong { display: block; color: var(--navy); font-size: 21px; } .rule span { color: var(--muted); font-size: 11px; }
+  .hard-limit { display: inline-block; margin-top: 18px; color: var(--amber); font: 700 10px Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+  .empty, .error { padding: 26px 10px; color: var(--muted); text-align: center; } .error { color: var(--red); background: var(--red-bg); }
+  .toast { position: fixed; right: 24px; bottom: 24px; padding: 13px 16px; background: var(--navy); color: white; box-shadow: 0 6px 18px rgba(16,42,67,.2); }
+  .hidden { display: none; }
+  @media (max-width: 1000px) { .sidebar { width: 205px; flex-basis: 205px; } .content { width: calc(100% - 205px); padding: 25px; } .kpis { grid-template-columns: repeat(3, 1fr); } .grid-two { grid-template-columns: 1fr; } }
+  @media (max-width: 650px) { .shell { display: block; } .sidebar { width: 100%; padding: 18px; } .brand { padding: 0 4px 15px; } .nav { display: flex; gap: 4px; margin-top: 12px; overflow-x: auto; } .nav a { padding: 8px 10px; white-space: nowrap; } .sidebar-note { display: none; } .content { width: 100%; padding: 22px 16px 40px; } .topbar, .section-heading { align-items: flex-start; flex-direction: column; } .system-status { align-self: stretch; } .kpis { grid-template-columns: repeat(2, 1fr); } .kpi { min-height: 112px; padding: 13px; } .kpi-value { font-size: 20px; } .actions { width: 100%; } .actions button { flex: 1; } .safety { grid-template-columns: 1fr; } .table-controls { align-items: flex-start; flex-direction: column; } }
+</style>
+</head>
+<body>
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-name">RecoverAI</div><div class="brand-subtitle">Adaptive Revenue Recovery</div></div>
+    <nav class="nav"><a class="active" href="#overview">Overview</a><a href="#activity">Recovery Activity</a><a href="#learning">Agent Learning</a><a href="#safety">Safety &amp; Controls</a></nav>
+    <div class="sidebar-note">Simulation operations console<br><span>Persisted SQLite recovery history</span></div>
+  </aside>
+  <main class="content">
+    <header class="topbar"><div><div class="eyebrow">Revenue operations / Overview</div><h1>Revenue Recovery Overview</h1><p class="intro">Monitor recovered revenue, payment recovery decisions, and agent learning across simulation rounds.</p></div><div class="system-status"><span id="statusDot" class="status-dot"></span><span id="statusText">Agent Online</span></div></header>
+    <section id="overview" class="section">
+      <div class="section-heading"><div><h2>Current performance</h2><div class="section-kicker" id="roundCaption">Waiting for the first round</div></div><div class="actions"><button class="secondary" id="refreshButton">Refresh</button><button class="primary" id="runButton">Run Next Round</button></div></div>
+      <div class="kpis" id="kpis"></div>
+    </section>
+    <section class="section grid-two"><div class="panel"><div class="section-heading"><h2>Recovery trend</h2><span class="section-kicker">Recovery rate by round</span></div><div id="chart" class="chart"></div></div><div class="panel"><div class="section-heading"><h2>Latest round</h2><span class="section-kicker">Persisted summary</span></div><ul id="latestSummary" class="summary-list"></ul></div></section>
+    <section id="activity" class="section"><div class="section-heading"><div><h2>Recovery activity</h2><div class="section-kicker">Persisted decision trail from the recovery engine</div></div></div><div class="panel table-wrap"><table><thead><tr><th>Transaction</th><th>Failure reason</th><th>Root cause</th><th>Recovery action</th><th>Amount</th><th>Outcome</th><th>Round</th><th>Timestamp</th><th>Decision note</th></tr></thead><tbody id="activityBody"></tbody></table><div id="activityControls" class="table-controls"></div></div></section>
+    <section id="learning" class="section"><div class="section-heading"><div><h2>Agent learning</h2><div class="section-kicker">Current Beta beliefs across category and action pairs</div></div></div><div class="grid-two"><div class="panel table-wrap"><table class="belief-table"><thead><tr><th>Failure category</th><th>Recovery action</th><th>Alpha</th><th>Beta</th><th>Estimated success</th><th>Observations</th></tr></thead><tbody id="beliefBody"></tbody></table><div id="beliefControls" class="table-controls"></div></div><div class="panel policy"><h3>Adaptive decision policy</h3><p>The agent evaluates available recovery actions and updates its belief about their success based on observed outcomes.</p><span class="hard-limit">Thompson Sampling policy</span></div></div></section>
+    <section id="safety" class="section"><div class="section-heading"><div><h2>Safety &amp; controls</h2><div class="section-kicker">Guardrails are enforced independently of learned beliefs</div></div></div><div class="grid-two"><div class="panel"><div class="safety"><div class="rule"><strong>2</strong><span>Maximum retries per transaction</span></div><div class="rule"><strong>1</strong><span>Maximum customer contacts per day</span></div></div><span class="hard-limit">Hard limits: never learned or overridden</span></div><div class="panel"><div class="section-heading"><h2>Safety blocks</h2><span class="section-kicker">Latest round</span></div><div id="blockedSummary" class="empty">No safety blocks recorded.</div></div></div></section>
+    <section class="section"><div class="section-heading"><h2>Controls</h2></div><div class="panel"><button class="secondary" id="resetButton">Reset persisted agent history</button><span class="section-kicker" style="margin-left:12px">Use only when starting a clean demonstration.</span></div></section>
+  </main>
+</div>
+<div id="toast" class="toast hidden"></div>
+<script>
+const API = "http://localhost:8000";
+let latestActivity = [];
+let activityPage = 1;
+let beliefRows = [];
+let beliefPage = 1;
+const ACTIVITY_PAGE_SIZE = 10;
+const BELIEF_PAGE_SIZE = 8;
+const $ = id => document.getElementById(id);
+const money = value => `₹${Number(value || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}`;
+const label = value => String(value || "").replaceAll("_", " ");
+async function api(path, options = {}) { const response = await fetch(`${API}${path}`, options); if (!response.ok) throw new Error(`Request failed (${response.status})`); return response.json(); }
+function showError() { $("statusDot").classList.add("offline"); $("statusText").textContent = "Engine unavailable"; $("kpis").innerHTML = '<div class="error" style="grid-column:1/-1">Unable to connect to the recovery engine.</div>'; ["chart", "latestSummary", "beliefBody", "activityBody", "blockedSummary"].forEach(id => $(id).innerHTML = '<div class="error">Unable to connect to the recovery engine.</div>'); }
+function renderKpis(rounds) { if (!rounds.length) { $("kpis").innerHTML = '<div class="empty" style="grid-column:1/-1">No rounds run yet. Start the first round to populate live recovery metrics.</div>'; $("roundCaption").textContent = "Waiting for the first round"; return; } const total = rounds.reduce((sum, r) => sum + Number(r.total_transactions || 0), 0); const risk = rounds.reduce((sum, r) => sum + Number(r.amount_at_risk || 0), 0); const recovered = rounds.reduce((sum, r) => sum + Number(r.amount_recovered || 0), 0); const latest = rounds.at(-1); const successful = latestActivity.filter(entry => entry.actual_outcome === "recovered").length; $("roundCaption").textContent = `Round ${latest.round} is the latest persisted batch`; $("kpis").innerHTML = `<div class="kpi"><div class="kpi-label">Amount at risk</div><div class="kpi-value">${money(risk)}</div><div class="kpi-detail">${rounds.length} round${rounds.length === 1 ? "" : "s"} recorded</div></div><div class="kpi green"><div class="kpi-label">Recovered amount</div><div class="kpi-value">${money(recovered)}</div><div class="kpi-detail">Across all persisted rounds</div></div><div class="kpi green"><div class="kpi-label">Recovery rate</div><div class="kpi-value">${risk ? ((recovered / risk) * 100).toFixed(1) : "0.0"}%</div><div class="kpi-detail">Value recovered / at risk</div></div><div class="kpi"><div class="kpi-label">Transactions processed</div><div class="kpi-value">${total.toLocaleString()}</div><div class="kpi-detail">${latest.total_transactions} in latest round</div></div><div class="kpi"><div class="kpi-label">Successful recoveries</div><div class="kpi-value">${successful.toLocaleString()}</div><div class="kpi-detail">Across all persisted transactions</div></div>`; }
+function renderChart(rounds) { if (!rounds.length) { $("chart").innerHTML = '<div class="empty">Run a round to see the recovery trend.</div>'; return; } const max = Math.max(...rounds.map(r => Number(r.recovery_rate_pct)), 10); $("chart").innerHTML = rounds.map(r => `<div class="bar-wrap" title="Round ${r.round}: ${r.recovery_rate_pct}%"><div class="bar" style="height:${Math.max(2, Number(r.recovery_rate_pct) / max * 100)}%"></div><div class="bar-label">R${r.round}<br>${r.recovery_rate_pct}%</div></div>`).join(""); }
+function renderLatest(rounds) { if (!rounds.length) { $("latestSummary").innerHTML = '<li class="empty">No round data yet.</li>'; return; } const r = rounds.at(-1); $("latestSummary").innerHTML = `<li><span>Round</span><strong>${r.round}</strong></li><li><span>Transactions processed</span><strong>${r.total_transactions}</strong></li><li><span>Recovered amount</span><strong>${money(r.amount_recovered)}</strong></li><li><span>Recovery rate</span><strong>${r.recovery_rate_pct}%</strong></li><li><span>Safety blocks</span><strong>${r.blocked_count}</strong></li>`; $("blockedSummary").textContent = `${r.blocked_count} decision${Number(r.blocked_count) === 1 ? "" : "s"} blocked by a hard limit in round ${r.round}.`; }
+function renderPagination(id, page, totalPages, totalItems, pageSize, onPage) { const controls = $(id); if (!totalItems) { controls.innerHTML = ""; return; } const start = (page - 1) * pageSize + 1; const end = Math.min(page * pageSize, totalItems); const pages = []; for (let number = 1; number <= totalPages; number += 1) { if (number === 1 || number === totalPages || Math.abs(number - page) <= 1) pages.push(number); else if (pages.at(-1) !== "...") pages.push("..."); } controls.innerHTML = `<span>Showing ${start}-${end} of ${totalItems}</span><div class="pagination"><button data-page="${page - 1}" ${page === 1 ? "disabled" : ""}>Previous</button>${pages.map(number => number === "..." ? "<span>...</span>" : `<button data-page="${number}" class="${number === page ? "active" : ""}">${number}</button>`).join("")}<button data-page="${page + 1}" ${page === totalPages ? "disabled" : ""}>Next</button></div>`; controls.querySelectorAll("button").forEach(button => button.addEventListener("click", () => onPage(Number(button.dataset.page)))); }
+function renderBeliefsPage() { if (!beliefRows.length) { $("beliefBody").innerHTML = '<tr><td colspan="6" class="empty">No beliefs learned yet. Run a round to observe outcomes.</td></tr>'; $("beliefControls").innerHTML = ""; return; } const totalPages = Math.ceil(beliefRows.length / BELIEF_PAGE_SIZE); beliefPage = Math.min(beliefPage, totalPages); const visible = beliefRows.slice((beliefPage - 1) * BELIEF_PAGE_SIZE, beliefPage * BELIEF_PAGE_SIZE); $("beliefBody").innerHTML = visible.map(b => { const observations = Number(b.alpha) + Number(b.beta) - 2; const estimate = Number(b.alpha) / (Number(b.alpha) + Number(b.beta)) * 100; return `<tr><td><strong>${label(b.category)}</strong></td><td>${label(b.action)}</td><td>${b.alpha}</td><td>${b.beta}</td><td class="probability">${estimate.toFixed(1)}%<div class="progress"><span style="width:${estimate}%"></span></div></td><td>${Math.max(0, observations)}</td></tr>`; }).join(""); renderPagination("beliefControls", beliefPage, totalPages, beliefRows.length, BELIEF_PAGE_SIZE, page => { beliefPage = page; renderBeliefsPage(); }); }
+function renderBeliefs(beliefs) { beliefRows = beliefs || []; beliefPage = 1; renderBeliefsPage(); }
+function renderActivityPage() { if (!latestActivity.length) { $("activityBody").innerHTML = '<tr><td colspan="9" class="empty">No persisted activity found. Run a round to display its decision trail.</td></tr>'; $("activityControls").innerHTML = ""; return; } const totalPages = Math.ceil(latestActivity.length / ACTIVITY_PAGE_SIZE); activityPage = Math.min(activityPage, totalPages); const visible = latestActivity.slice((activityPage - 1) * ACTIVITY_PAGE_SIZE, activityPage * ACTIVITY_PAGE_SIZE); $("activityBody").innerHTML = visible.map(e => `<tr><td><strong>${e.transaction_id}</strong></td><td>${label(e.failure_reason)}</td><td>${label(e.category)}</td><td>${label(e.chosen_action)}</td><td>${money(e.amount)}</td><td><span class="badge ${e.actual_outcome}">${e.blocked_by_safety_limit ? "Safety Blocked" : label(e.actual_outcome)}</span></td><td>${e.round}</td><td>${new Date(e.timestamp).toLocaleString()}</td><td class="explanation" title="${e.explanation}">${e.explanation}</td></tr>`).join(""); renderPagination("activityControls", activityPage, totalPages, latestActivity.length, ACTIVITY_PAGE_SIZE, page => { activityPage = page; renderActivityPage(); }); }
+function renderActivity(log) { latestActivity = log || []; activityPage = 1; renderActivityPage(); }
+async function loadAll() { try { const [rounds, beliefs, transactions] = await Promise.all([api("/api/rounds-summary"), api("/api/beliefs"), api("/api/transactions")]); $("statusDot").classList.remove("offline"); $("statusText").textContent = "Agent Online"; renderActivity(transactions); renderKpis(rounds); renderChart(rounds); renderLatest(rounds); renderBeliefs(beliefs); } catch (error) { showError(); } }
+async function runRound() { const button = $("runButton"); button.disabled = true; button.textContent = "Running..."; try { const result = await api("/api/run-round", { method: "POST" }); await loadAll(); showToast(`Round ${result.round} completed successfully`); } catch (error) { showError(); } finally { button.disabled = false; button.textContent = "Run Next Round"; } }
+async function resetAll() { if (!confirm("Reset all persisted beliefs, rounds, and customer contact history?")) return; try { await api("/api/reset", { method: "POST" }); renderActivity([]); await loadAll(); showToast("Persisted agent history reset"); } catch (error) { showError(); } }
+function showToast(message) { $("toast").textContent = message; $("toast").classList.remove("hidden"); setTimeout(() => $("toast").classList.add("hidden"), 2800); }
+$("runButton").addEventListener("click", runRound); $("refreshButton").addEventListener("click", loadAll); $("resetButton").addEventListener("click", resetAll); loadAll();
+</script>
+</body>
+</html>
