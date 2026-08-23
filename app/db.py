@@ -102,8 +102,9 @@ def get_transactions():
     conn = get_conn()
     rows = conn.execute("""
         SELECT transaction_id, customer_id, amount, failure_reason, category,
-               chosen_action, actual_outcome, recovered_amount, round,
-               blocked_by_safety_limit, safety_reason, explanation, timestamp
+               chosen_action, evidence, candidates_considered, expected_outcome,
+               actual_outcome, recovered_amount, blocked_by_safety_limit,
+               safety_reason, explanation, belief_update, timestamp, round
         FROM audit_log
         ORDER BY round DESC, id DESC
     """).fetchall()
@@ -112,6 +113,11 @@ def get_transactions():
     for row in rows:
         transaction = dict(row)
         transaction["blocked_by_safety_limit"] = bool(transaction["blocked_by_safety_limit"])
+        for field in ("evidence", "candidates_considered", "expected_outcome", "belief_update"):
+            try:
+                transaction[field] = json.loads(transaction[field]) if transaction[field] else None
+            except (TypeError, json.JSONDecodeError):
+                transaction[field] = None
         transactions.append(transaction)
     return transactions
 
