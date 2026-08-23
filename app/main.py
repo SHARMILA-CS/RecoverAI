@@ -52,6 +52,12 @@ def beliefs():
     return db.get_all_beliefs()
 
 
+@app.get("/api/learning-trajectory")
+def learning_trajectory():
+    """Historical Beta belief values reconstructed from persisted audit updates."""
+    return db.get_learning_trajectory()
+
+
 @app.get("/api/transactions")
 def transactions():
     """Persisted transaction decision trails, newest round first."""

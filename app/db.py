@@ -98,6 +98,67 @@ def get_all_beliefs():
     return [dict(r) for r in rows]
 
 
+def get_learning_trajectory():
+    conn = get_conn()
+    rows = conn.execute("""
+        SELECT round, category, candidates_considered, belief_update,
+               blocked_by_safety_limit
+        FROM audit_log
+        ORDER BY round ASC, id ASC
+    """).fetchall()
+    conn.close()
+
+    pairs = set()
+    entries_by_round = {}
+    rounds = set()
+    for row in rows:
+        round_number = row["round"]
+        rounds.add(round_number)
+        candidates = _parse_json(row["candidates_considered"], [])
+        update = _parse_json(row["belief_update"], None)
+        for candidate in candidates:
+            if candidate.get("action"):
+                pairs.add((row["category"], candidate["action"]))
+        if update and update.get("action"):
+            pairs.add((row["category"], update["action"]))
+        entries_by_round.setdefault(round_number, []).append((row, update))
+
+    trajectories = []
+    for category, action in sorted(pairs):
+        alpha, beta = 1.0, 1.0
+        points = []
+        for round_number in sorted(rounds):
+            executed_updates = 0
+            blocked_count = 0
+            for row, update in entries_by_round[round_number]:
+                if row["category"] != category:
+                    continue
+                candidates = _parse_json(row["candidates_considered"], [])
+                if not any(candidate.get("action") == action for candidate in candidates):
+                    continue
+                if row["blocked_by_safety_limit"]:
+                    blocked_count += 1
+                if update and update.get("action") == action:
+                    alpha = float(update.get("new_alpha", alpha))
+                    beta = float(update.get("new_beta", beta))
+                    executed_updates += 1
+            points.append({
+                "round": round_number,
+                "alpha": round(alpha, 2),
+                "beta": round(beta, 2),
+                "estimated_success_probability": round(alpha / (alpha + beta), 4),
+                "cumulative_observations": round(alpha + beta - 2, 2),
+                "executed_updates": executed_updates,
+                "blocked_count": blocked_count,
+            })
+        trajectories.append({
+            "category": category,
+            "action": action,
+            "trajectory": points,
+        })
+    return trajectories
+
+
 def get_transactions():
     conn = get_conn()
     rows = conn.execute("""
@@ -114,12 +175,16 @@ def get_transactions():
         transaction = dict(row)
         transaction["blocked_by_safety_limit"] = bool(transaction["blocked_by_safety_limit"])
         for field in ("evidence", "candidates_considered", "expected_outcome", "belief_update"):
-            try:
-                transaction[field] = json.loads(transaction[field]) if transaction[field] else None
-            except (TypeError, json.JSONDecodeError):
-                transaction[field] = None
+            transaction[field] = _parse_json(transaction[field], None)
         transactions.append(transaction)
     return transactions
+
+
+def _parse_json(value, fallback):
+    try:
+        return json.loads(value) if value else fallback
+    except (TypeError, json.JSONDecodeError):
+        return fallback
 
 
 def get_contact_count(customer_id, date):
