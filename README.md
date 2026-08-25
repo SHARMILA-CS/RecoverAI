@@ -20,7 +20,9 @@ recovery integration and does not process live customer or Razorpay data.
 
 ## Dashboard Preview
 
-![RecoverAI Dashboard](docs/dashboard-preview.png)
+![RecoverAI Dashboard Overview](docs/dashboard-overview.png)
+
+![RecoverAI Learning and Safety](docs/dashboard-learning.png)
 
 ## Problem
 
